@@ -135,10 +135,11 @@ visited buffers, and we return to the buffer from which
   ;; being called from dedicated windows (like treemacs)
   (when (window-dedicated-p)
     (error "Cannot call postrace-browse from a dedicated window"))
+  ;; Clear out positions whose buffer has been closed.
+  (postrace-session--remove-positions-without-buffer (postrace--global))
   (let* ((session (postrace--global))
-	 (stack (postrace-session-stack session))
-	 (size (postrace-stack--len stack)))
-    (if (> size 0)
+	 (stack (postrace-session-stack session)))
+    (if (> (postrace-stack--len stack) 0)
 	(progn
 	  (postrace-session--clear-restore-points session)
 	  ;; we'll use the active window to preview selected positions
@@ -400,6 +401,17 @@ Decrements the selected element index in the position stack."
     ;; advance current selection
     (postrace-session--select self (postrace-stack--last-index stack))))
 
+(defun postrace-session--remove-positions-without-buffer (self)
+  "Clear the position stack of session SELF from positions whose buffer has been closed."
+  (let* ((stack (postrace-session-stack self))
+         (start-index 0)
+         (end-index (- (postrace-stack--len stack) 1)))
+    (cl-loop for i from end-index downto start-index do
+             ;; If the buffer does not exist, remove it from the stack.
+             (unless (marker-buffer (postrace-stack--get stack i))
+               (postrace-stack--remove-at stack i)
+               ;; Note: ensure selected does not end up out-of-bounds.
+               (postrace-session--select self 0)))))
 
 (defun postrace-session--enter-browse-mode (self window)
   "Enter 'browse mode' for session SELF, using WINDOW as the active browse window."
