@@ -258,7 +258,7 @@ Decrements the selected element index in the position stack."
 	  (postrace-session--select session last-index)))
       ;; make sure we exit the minibuffer if we remove the last stack item
       (when (= size 1)
-	(abort-recursive-edit)))))
+	(postrace-browse-exit)))))
 
 ;;
 ;; Position stack management
